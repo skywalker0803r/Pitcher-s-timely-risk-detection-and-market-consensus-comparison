@@ -31,4 +31,29 @@ cd Pitcher-s-timely-risk-detection-and-market-consensus-comparison
 conda create -n pitcher_pose_env python=3.9
 conda activate pitcher_pose_env
 ```
-
+### 3️⃣ 安裝套件
+```bash
+pip install -r requirements.txt
+```
+### 🚀 使用方式
+1️⃣ 產生模型
+首先執行 model.py 訓練並產生模型檔案 model.pth：
+```bash
+python model.py
+```
+### 2️⃣ 進行影片推論
+使用已訓練的模型進行影片分析與姿勢分類：
+```bash
+python infer_video.py --video_path path_to_video.mp4
+```
+輸出將會在影片中標註判斷結果，並可視化姿勢分類結果
+### 📁 專案架構
+```bash
+Pitcher-s-timely-risk-detection-and-market-consensus-comparison/
+├── model.py                 # 模型訓練程式碼，產生 model.pth
+├── infer_video.py           # 讀取影片並進行姿勢推論
+├── dataset/                 # 放置資料的資料夾
+├── checkpoints/             # 模型儲存位置
+├── requirements.txt         # 所需套件
+└── README.md                # 使用說明文件
+```
