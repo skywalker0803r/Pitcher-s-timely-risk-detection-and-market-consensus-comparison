@@ -57,4 +57,5 @@ Pitcher-s-timely-risk-detection-and-market-consensus-comparison/
 ├── requirements.txt         # 所需套件
 └── README.md                # 使用說明文件
 ```
-https://github.com/skywalker0803r/Pitcher-s-timely-risk-detection-and-market-consensus-comparison/blob/main/output_with_pose_and_label.mp4
+
+[![Watch the video]()]([https://youtu.be/T-D1KVIuvjA](https://github.com/skywalker0803r/Pitcher-s-timely-risk-detection-and-market-consensus-comparison/blob/main/output_with_pose_and_label.mp4))
