@@ -61,6 +61,7 @@ while cap.isOpened():
         cv2.putText(frame, f"Pose: {label}", (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
 
     cv2.imshow("Pose Classification", frame)
+    video_writer.write(frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
