@@ -1,0 +1,87 @@
+# Python 編譯器產生的檔案
+__pycache__/
+*.py[cod]
+*$py.class
+
+# 虛擬環境
+venv/
+ENV/
+env/
+.venv/
+.ENV/
+
+# Jupyter Notebook 檔案的 checkpoint
+.ipynb_checkpoints/
+
+# 編譯生成的檔案
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# pip 記錄檔
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 測試產生的檔案
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# mypy、pylint、其他靜態分析工具
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
+
+# IDE 或編輯器設定檔
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+
+# 日誌檔
+*.log
+
+# 本地資料庫檔
+*.sqlite3
+
+# dotenv 檔案（通常包含秘密資訊）
+.env
+.env.*
+
+# Jupyter Notebook 快取檔或輸出檔（如有自動產生的輸出圖表）
+*.out
+*.bak
+
+# 忽略所有 MP4 檔案
+*.mp4
+
+# 忽略所有 PyTorch 模型檔案
+*.pth
+
+# 忽略所有 CSV 檔案
+*.csv
+

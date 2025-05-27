@@ -9,3 +9,6 @@ torchaudio
 # 其他套件會從預設的 PyPI 安裝（例如 mediapipe）
 mediapipe==0.10.9
 pandas==2.2.3
+requests==2.32.3
+beautifulsoup4==4.13.4
+selenium==4.33.0

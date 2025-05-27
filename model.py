@@ -37,6 +37,6 @@ if __name__ == "__main__":
     model = TCNClassifier(input_size=99, num_classes=2)
     torch.save(model.state_dict(), "model.pth")
     print("✅ 模型結構已儲存為 model.pth（尚未訓練）")
-    x = torch.randn(1, 99, 30)  # batch=1, channel=99, seq_len=30
+    x = torch.randn(10, 99, 100)  # batch=1, channel=99, seq_len=30
     out = model(x)
     print(out.shape)  # 預期輸出 torch.Size([1, 2])
