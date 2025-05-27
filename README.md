@@ -23,7 +23,7 @@
 ### 1️⃣ Clone 專案
 
 ```bash
-git clone https://github.com/your-username/Pitcher-s-timely-risk-detection-and-market-consensus-comparison.git
+git clone https://github.com/skywalker0803r/Pitcher-s-timely-risk-detection-and-market-consensus-comparison.git
 cd Pitcher-s-timely-risk-detection-and-market-consensus-comparison
 ```
 ### 2️⃣ 建立 Conda 環境並啟用
@@ -52,9 +52,12 @@ python infer_video.py --video_path path_to_video.mp4
 Pitcher-s-timely-risk-detection-and-market-consensus-comparison/
 ├── model.py                 # 模型訓練程式碼，產生 model.pth
 ├── infer_video.py           # 讀取影片並進行姿勢推論
-├── dataset/                 # 放置資料的資料夾
-├── checkpoints/             # 模型儲存位置
+├── train_data/              # 訓練數據
+├── model.pth                # 模型
 ├── requirements.txt         # 所需套件
+├── train.py                 # 模型訓練
+├── Proof of Concept         # 概念驗證
+├── utils                    # 工具函數
 └── README.md                # 使用說明文件
 ```
 
