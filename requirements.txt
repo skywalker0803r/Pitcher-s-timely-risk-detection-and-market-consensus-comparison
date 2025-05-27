@@ -8,3 +8,4 @@ torchaudio
 
 # 其他套件會從預設的 PyPI 安裝（例如 mediapipe）
 mediapipe==0.10.9
+pandas==2.2.3
