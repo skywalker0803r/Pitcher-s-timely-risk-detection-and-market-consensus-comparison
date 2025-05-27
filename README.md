@@ -44,7 +44,7 @@ python model.py
 ### 2️⃣ 進行影片推論
 使用已訓練的模型進行影片分析與姿勢分類：
 ```bash
-python infer_video.py --video_path path_to_video.mp4
+python infer_video.py
 ```
 輸出將會在影片中標註判斷結果，並可視化姿勢分類結果
 ### 📁 專案架構
