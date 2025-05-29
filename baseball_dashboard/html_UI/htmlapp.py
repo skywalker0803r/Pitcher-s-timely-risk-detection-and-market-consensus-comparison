@@ -95,7 +95,7 @@ def gen_frames():
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
 
-        time.sleep(1/30)  # 控制約30fps
+        #time.sleep(1/30)  # 控制約30fps
 
 def process_video():
     """讀影片，分析骨架關節座標，透過 socketio 發送資料"""
