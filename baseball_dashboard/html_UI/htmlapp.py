@@ -121,7 +121,7 @@ def process_video():
             data = {'x': None, 'y': None, 'z': None}
 
         socketio.emit('joint_data', data)
-        socketio.sleep(1/30)  # 保持與影像 fps 同步
+        #socketio.sleep(1/30)  # 保持與影像 fps 同步
 
     cap.release()
 
