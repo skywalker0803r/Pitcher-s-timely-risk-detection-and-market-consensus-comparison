@@ -86,6 +86,12 @@
     </div>
   </div>
 
+  <!-- 姿勢分析結果 -->
+  <div style="margin-top: 20px;">
+  <h3>姿勢分析結果</h3>
+  <div id="pose-status" style="font-size: 18px; font-weight: bold; color: #333;"></div>
+  </div>
+
 </div>
 
 <script>
@@ -185,6 +191,15 @@ function initSocket() {
       valZ.textContent = `Z: --`;
     }
   });
+
+  socket.on('pose_feedback', (data) => {
+    if (data.error) {
+        document.getElementById('pose-status').innerText = "分析錯誤: " + data.error;
+    } else {
+        document.getElementById('pose-status').innerText =
+            `肘部角度: ${data.elbow_angle.toFixed(2)}° → ${data.status}`;
+    }
+});
 
   socket.on('disconnect', () => {
     console.log('Socket disconnected');

@@ -5,6 +5,31 @@ import mediapipe as mp
 import threading
 import time
 import os
+import numpy as np
+
+def angle_between(p1, p2, p3):
+    """計算 p1-p2-p3 的夾角（以 p2 為頂點）"""
+    v1 = np.array([p1.x, p1.y, p1.z]) - np.array([p2.x, p2.y, p2.z])
+    v2 = np.array([p3.x, p3.y, p3.z]) - np.array([p2.x, p2.y, p2.z])
+    dot = np.dot(v1, v2)
+    norm = np.linalg.norm(v1) * np.linalg.norm(v2)
+    cos_theta = np.clip(dot / norm, -1.0, 1.0)
+    return np.degrees(np.arccos(cos_theta))
+
+def evaluate_throw_pose(landmarks):
+    try:
+        shoulder = landmarks[12]  # 右肩膀
+        elbow = landmarks[14]     # 右手肘
+        wrist = landmarks[16]     # 右手腕
+
+        angle = angle_between(shoulder, elbow, wrist)
+
+        if 70 <= angle <= 110:
+            return {"elbow_angle": angle, "status": "✅ 良好"}
+        else:
+            return {"elbow_angle": angle, "status": "⚠️ 應注意：肘部角度異常"}
+    except Exception as e:
+        return {"error": str(e)}
 
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -115,13 +140,16 @@ def process_video():
 
         # 傳送指定關節座標給前端
         if results.pose_landmarks:
-            j = results.pose_landmarks.landmark[selected_joint_idx]
+            landmarks = results.pose_landmarks.landmark
+            j = landmarks[selected_joint_idx]
             data = {'x': j.x, 'y': j.y, 'z': j.z}
+            eval_result = evaluate_throw_pose(landmarks)
         else:
             data = {'x': None, 'y': None, 'z': None}
+            eval_result = {"error":'沒有偵測到關節'}
 
         socketio.emit('joint_data', data)
-        #socketio.sleep(1/30)  # 保持與影像 fps 同步
+        socketio.emit('pose_feedback', eval_result)
 
     cap.release()
 
