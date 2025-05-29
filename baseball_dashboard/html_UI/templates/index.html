@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>棒球投手姿勢即時分析</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="p-4">
+
+  <h1>⚾ 即時棒球投手姿勢分析儀表板</h1>
+
+  <form id="upload-form" class="mb-3">
+    <label for="video-upload" class="form-label">請上傳影片</label>
+    <input class="form-control" type="file" id="video-upload" accept="video/*" required />
+    <button type="submit" class="btn btn-primary mt-2">上傳</button>
+  </form>
+
+  <div class="row">
+    <div class="col-md-6">
+      <h5>投手影片串流 (含骨架標記)</h5>
+      <img id="video-stream" width="100%" style="border:1px solid #ccc" />
+      <div class="mt-2">
+        <label for="joint-select" class="form-label">選擇關節</label>
+        <select id="joint-select" class="form-select">
+          {% for idx, name in joint_names.items() %}
+            <option value="{{ idx }}">{{ idx }}: {{ name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <h5 id="chart-title">關節位置變化 (x/y/z)</h5>
+      <canvas id="joint-chart" height="300"></canvas>
+    </div>
+  </div>
+
+<script>
+const uploadForm = document.getElementById('upload-form');
+const videoUpload = document.getElementById('video-upload');
+const videoStream = document.getElementById('video-stream');
+const jointSelect = document.getElementById('joint-select');
+const ctx = document.getElementById('joint-chart').getContext('2d');
+
+let socket = null;
+let chart = null;
+
+const maxDataPoints = 100;
+const dataX = [];
+const dataY = [];
+const dataZ = [];
+
+uploadForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (videoUpload.files.length === 0) {
+    alert("請選擇影片檔");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('video', videoUpload.files[0]);
+
+  const res = await fetch('/upload', {
+    method: 'POST',
+    body: formData
+  });
+  const result = await res.json();
+  if (result.success) {
+    // 顯示串流影片
+    videoStream.src = '/video_feed';
+
+    // 初始化 Socket.IO
+    if (socket) {
+      socket.disconnect();
+    }
+    initSocket();
+  }
+});
+
+jointSelect.addEventListener('change', () => {
+  if (socket) {
+    socket.emit('select_joint', { joint: jointSelect.value });
+    resetChartData();
+    updateChartTitle();
+  }
+});
+
+function initSocket() {
+  socket = io();
+
+  socket.on('connect', () => {
+    console.log('Socket connected');
+    socket.emit('select_joint', { joint: jointSelect.value });
+    resetChartData();
+    updateChartTitle();
+  });
+
+  socket.on('joint_data', data => {
+    if (data.x !== null && data.y !== null && data.z !== null) {
+      pushData(dataX, data.x);
+      pushData(dataY, data.y);
+      pushData(dataZ, data.z);
+      updateChart();
+    }
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Socket disconnected');
+  });
+}
+
+function pushData(arr, val) {
+  arr.push(val);
+  if (arr.length > maxDataPoints) {
+    arr.shift();
+  }
+}
+
+function resetChartData() {
+  dataX.length = 0;
+  dataY.length = 0;
+  dataZ.length = 0;
+}
+
+function updateChartTitle() {
+  const idx = jointSelect.value;
+  const name = jointSelect.options[jointSelect.selectedIndex].text;
+  document.getElementById('chart-title').textContent = `關節 ${idx}: ${name} 位置變化 (x/y/z)`;
+}
+
+function updateChart() {
+  if (!chart) {
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: dataX.map((_, i) => i),
+        datasets: [
+          {
+            label: 'X',
+            borderColor: 'red',
+            data: dataX,
+            fill: false,
+          },
+          {
+            label: 'Y',
+            borderColor: 'green',
+            data: dataY,
+            fill: false,
+          },
+          {
+            label: 'Z',
+            borderColor: 'blue',
+            data: dataZ,
+            fill: false,
+          }
+        ]
+      },
+      options: {
+        animation: false,
+        responsive: true,
+        scales: {
+          y: {
+            min: 0,
+            max: 1,
+          }
+        }
+      }
+    });
+  } else {
+    chart.data.labels = dataX.map((_, i) => i);
+    chart.data.datasets[0].data = dataX;
+    chart.data.datasets[1].data = dataY;
+    chart.data.datasets[2].data = dataZ;
+    chart.update('none');
+  }
+}
+
+</script>
+
+</body>
+</html>
