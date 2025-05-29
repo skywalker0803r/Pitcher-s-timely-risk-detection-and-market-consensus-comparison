@@ -47,6 +47,15 @@ python model.py
 python infer_video.py
 ```
 輸出將會在影片中標註判斷結果，並可視化姿勢分類結果
+
+### 儀表板UI設計
+放在資料夾baseball_dashboard
+```bash
+baseball_dashboard/
+├── html_UI/ # 傳統HTML前端
+├── streamlit_UI/ # streamlit前端
+```
+
 ### 📁 專案架構
 ```bash
 Pitcher-s-timely-risk-detection-and-market-consensus-comparison/
@@ -58,6 +67,7 @@ Pitcher-s-timely-risk-detection-and-market-consensus-comparison/
 ├── train.py                 # 模型訓練
 ├── Proof of Concept         # 概念驗證
 ├── utils                    # 工具函數
+├── baseball_dashboard/      # 儀表板UI
 └── README.md                # 使用說明文件
 ```
 
