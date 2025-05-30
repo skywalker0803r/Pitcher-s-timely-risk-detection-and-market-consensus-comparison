@@ -32,6 +32,12 @@
     #joint-chart {
       height: 320px;
     }
+    .match-height {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
   </style>
 </head>
 <body>
@@ -107,25 +113,34 @@
 
   <!-- 相似度分析結果區塊 -->
   <div class="row mt-4">
-    <div class="col-12">
-      <div class="card p-4 text-center">
-        <h4 class="card-title mb-3">
-          <i class="bi bi-check-circle text-success me-2"></i>標準動作相似度分析
-        </h4>
-        <div id="start_similarity" class="fs-5 fw-semibold text-dark">
-          起手姿勢相似度: 尚未分析
-        </div>
-        <div id="max_start_similarity" class="fs-6 text-muted mt-1">
-          起手姿勢最高相似度: 尚未分析
-        </div>
-        <div id="end_similarity" class="fs-5 fw-semibold text-dark mt-3">
-          結束姿勢相似度: 尚未分析
-        </div>
-        <div id="max_end_similarity" class="fs-6 text-muted mt-1">
-          結束姿勢最高相似度: 尚未分析
-        </div>
+  <!-- 左側：文字分析 -->
+  <div class="col-md-6">
+    <div class="card p-4 text-center match-height">
+      <h4 class="card-title mb-3">
+        <i class="bi bi-check-circle text-success me-2"></i>標準動作相似度分析
+      </h4>
+      <div id="start_similarity" class="fs-5 fw-semibold text-dark">
+        起手姿勢相似度: 尚未分析
+      </div>
+      <div id="max_start_similarity" class="fs-6 text-muted mt-1">
+        起手姿勢最高相似度: 尚未分析
+      </div>
+      <div id="end_similarity" class="fs-5 fw-semibold text-dark mt-3">
+        結束姿勢相似度: 尚未分析
+      </div>
+      <div id="max_end_similarity" class="fs-6 text-muted mt-1">
+        結束姿勢最高相似度: 尚未分析
       </div>
     </div>
+  </div>
+
+  <!-- 右側：即時線圖 -->
+  <div class="col-md-6">
+    <div class="card p-4 match-height">
+      <h5 class="card-title text-center">相似度變化圖</h5>
+      <canvas id="similarityChart" height="250"></canvas>
+    </div>
+  </div>
   </div>
 
 <script>
@@ -235,9 +250,45 @@ function initSocket() {
     }
 });
 
+// 相似度分析
+const ctx = document.getElementById('similarityChart').getContext('2d');
+const similarityChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: '起手相似度',
+        data: [],
+        borderColor: 'rgba(75, 192, 192, 1)',
+        fill: false
+      },
+      {
+        label: '結束相似度',
+        data: [],
+        borderColor: 'rgba(255, 99, 132, 1)',
+        fill: false
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    animation: false,
+    scales: {
+      y: {
+        min: 0,
+        max: 1,
+        ticks: {
+          stepSize: 0.1
+        }
+      }
+    }
+  }
+});
+
+let frameCount = 0;
 let maxStartSimilarity = 0;
 let maxEndSimilarity = 0;
-
 socket.on('standard_action_comparison', (data) => {
     if (data.error) {
         document.getElementById('start_similarity').innerText = "分析錯誤: " + data.error;
@@ -256,6 +307,12 @@ socket.on('standard_action_comparison', (data) => {
             maxEndSimilarity = data.similarity_to_end;
             document.getElementById('max_end_similarity').innerText = "結束姿勢最高相似度: " + maxEndSimilarity;
         }
+        // 更新圖表
+        frameCount += 1;
+        similarityChart.data.labels.push(frameCount);
+        similarityChart.data.datasets[0].data.push(data.similarity_to_start);
+        similarityChart.data.datasets[1].data.push(data.similarity_to_end);
+        similarityChart.update();
     }
 });
 
