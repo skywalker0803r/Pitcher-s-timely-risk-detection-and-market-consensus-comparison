@@ -16,6 +16,7 @@
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
       background: #000;
+      height: 320px;
     }
     .card {
       box-shadow: 0 6px 18px rgba(0,0,0,0.1);
@@ -27,6 +28,9 @@
     }
     #loading-spinner {
       display: none;
+    }
+    #joint-chart {
+      height: 320px;
     }
   </style>
 </head>
@@ -101,6 +105,28 @@
     </div>
   </div>
 
+  <!-- 相似度分析結果區塊 -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card p-4 text-center">
+        <h4 class="card-title mb-3">
+          <i class="bi bi-check-circle text-success me-2"></i>標準動作相似度分析
+        </h4>
+        <div id="start_similarity" class="fs-5 fw-semibold text-dark">
+          起手姿勢相似度: 尚未分析
+        </div>
+        <div id="max_start_similarity" class="fs-6 text-muted mt-1">
+          起手姿勢最高相似度: 尚未分析
+        </div>
+        <div id="end_similarity" class="fs-5 fw-semibold text-dark mt-3">
+          結束姿勢相似度: 尚未分析
+        </div>
+        <div id="max_end_similarity" class="fs-6 text-muted mt-1">
+          結束姿勢最高相似度: 尚未分析
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
 const uploadForm = document.getElementById('upload-form');
@@ -206,6 +232,30 @@ function initSocket() {
     } else {
         document.getElementById('pose-status').innerText =
             `肘部角度: ${data.elbow_angle.toFixed(2)}° → ${data.status}`;
+    }
+});
+
+let maxStartSimilarity = 0;
+let maxEndSimilarity = 0;
+
+socket.on('standard_action_comparison', (data) => {
+    if (data.error) {
+        document.getElementById('start_similarity').innerText = "分析錯誤: " + data.error;
+        document.getElementById('end_similarity').innerText = "分析錯誤: " + data.error;
+    } else {
+        // 顯示即時數據
+        document.getElementById('start_similarity').innerText = "起手姿勢相似度: " + data.similarity_to_start;
+        document.getElementById('end_similarity').innerText = "結束姿勢相似度: " + data.similarity_to_end;
+
+        // 更新並顯示最大峰值
+        if (data.similarity_to_start > maxStartSimilarity) {
+            maxStartSimilarity = data.similarity_to_start;
+            document.getElementById('max_start_similarity').innerText = "起手姿勢最高相似度: " + maxStartSimilarity;
+        }
+        if (data.similarity_to_end > maxEndSimilarity) {
+            maxEndSimilarity = data.similarity_to_end;
+            document.getElementById('max_end_similarity').innerText = "結束姿勢最高相似度: " + maxEndSimilarity;
+        }
     }
 });
 
