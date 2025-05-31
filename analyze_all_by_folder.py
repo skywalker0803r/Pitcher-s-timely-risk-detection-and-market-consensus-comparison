@@ -25,9 +25,9 @@ def run_analysis_on_folder(folder_path):
             feature_path = os.path.join(output_dir, f"{basename}_keyframe_feats.npy")
 
             # 如果已經存在對應的特徵檔案，略過
-            if os.path.exists(feature_path):
-                print(f"略過已處理影片：{file}")
-                continue
+            #if os.path.exists(feature_path):
+            #    print(f"略過已處理影片：{file}")
+            #    continue
 
             # 呼叫 pose_extractor_with_keyframes.py
             subprocess.run(

@@ -35,9 +35,7 @@ def detect_release_frame_index(landmark_seq):
             np.array([curr.x, curr.y, curr.z]) - np.array([prev.x, prev.y, prev.z])
         )
         velocities.append(speed)
-
-    idx = np.argmax(velocities)
-    return idx + 1  # 回傳速度最大發生的幀（補回原本少掉的第一幀偏移）
+    return velocities
 
 
 # 左右髖的 z 值差越大，表示轉動幅度越大
@@ -66,11 +64,19 @@ def calc_leg_angle(lm):
 
 
 def calc_arm_horizontal_symmetry(lm):
-    return 1 - abs(lm[15].y - lm[16].y)  # 左右手腕 Y 差越小越對稱
+    def calc_arm_horizontal_symmetry_single_frame(lm):
+        return 1 - abs(lm[15].y - lm[16].y)  # 左右手腕 Y 差越小越對稱
+    if isinstance(lm, list):
+        return np.array([calc_arm_horizontal_symmetry_single_frame(frame) for frame in lm])
+    else:
+        return calc_arm_horizontal_symmetry_single_frame(lm)
 
 
 def calc_hip_twist_z(lm):
-    return abs(lm[23].z - lm[24].z)  # 髖部左右 z 軸差異
+    if isinstance(lm, list):
+        return np.array([abs(frame[23].z - frame[24].z) for frame in lm])
+    else:
+        return abs(lm[23].z - lm[24].z)  # 髖部左右 z 軸差異
 
 
 # 主流程
@@ -95,25 +101,25 @@ def extract_four_keyframes(video_path, output_dir):
     if len(frame_landmarks) < 5:
         print(f"⚠️ 無法從 {video_path} 擷取足夠幀")
         return
-    print(frame_landmarks)
-
-    # 前腳觸地
-    foot_idx = np.argmin([detect_foot_strike(lm) for lm in frame_landmarks])
-    # 雙手臂最水平
-    arm_idx = np.argmin([detect_arm_horizontal_score(lm) for lm in frame_landmarks])
-    # 出手點
-    release_idx = detect_release_frame_index(frame_landmarks)
-    # 髖部旋轉最明顯
-    hip_idx = np.argmax([detect_hip_rotation_score(lm) for lm in frame_landmarks])
+    
+    # 確保有足夠的幀數進行特徵擷取
+    # 設定安全邊界，避免索引超出範圍
+    # 改成只在有效區間內做搜尋[30:-30]，避免邊界問題
+    # 最後再加上 30 幀的偏移量
+    foot_idx = np.argmin([detect_foot_strike(lm) for lm in frame_landmarks][30:-30]) + 30
+    arm_idx = np.argmin([detect_arm_horizontal_score(lm) for lm in frame_landmarks][30:-30]) + 30
+    release_idx = np.argmax([detect_release_frame_index(frame_landmarks[30:-30])]) + 1 + 30
+    hip_idx = np.argmax([detect_hip_rotation_score(lm) for lm in frame_landmarks][30:-30]) + 30
+    print(f"⚠️ 偵測到的腳踝出發幀：{foot_idx}, 手臂水平幀：{arm_idx}, 出手幀：{release_idx}, 髖部轉動幀：{hip_idx}")
 
     # 組合特徵資料
     features = {
-        "leg_angle": calc_leg_angle(frame_landmarks[foot_idx]),
-        "arm_symmetry": calc_arm_horizontal_symmetry(frame_landmarks[arm_idx]),
-        "elbow_angle": calc_elbow_angle(frame_landmarks[release_idx]),
-        "hip_twist": calc_hip_twist_z(frame_landmarks[hip_idx]),
+        "leg_angle": calc_leg_angle(frame_landmarks[foot_idx-30:foot_idx+30]),
+        "arm_symmetry": calc_arm_horizontal_symmetry(frame_landmarks[arm_idx-30:arm_idx+30]),
+        "elbow_angle": calc_elbow_angle(frame_landmarks[release_idx-30:release_idx+30]),
+        "hip_twist": calc_hip_twist_z(frame_landmarks[hip_idx-30:hip_idx+30]),
     }
-
+    
     # 儲存為 .npy 檔
     filename = os.path.splitext(os.path.basename(video_path))[0]
     os.makedirs(output_dir, exist_ok=True)
@@ -121,7 +127,8 @@ def extract_four_keyframes(video_path, output_dir):
         os.path.join(output_dir, filename + "_keyframe_feats.npy"),
         np.array(list(features.values())),
     )
-    print(f"✅ 已儲存四幀特徵：{filename}")
+    # 打印成功訊息和資料shape
+    print(f"✅ 已儲存四幀特徵：{filename}, shape:{np.array(list(features.values())).shape}")
 
 
 # 若用命令列執行
