@@ -31,6 +31,7 @@ class TCNClassifier(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+# 用這個模型去改
 
 # ✅ 當直接執行時：儲存一個隨機初始化的模型
 if __name__ == "__main__":

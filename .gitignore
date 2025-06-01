@@ -3,6 +3,9 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# data
+/data/
+
 # 虛擬環境
 venv/
 ENV/
