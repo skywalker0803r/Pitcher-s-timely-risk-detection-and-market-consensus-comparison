@@ -6,7 +6,7 @@ import subprocess
 def is_valid_data_folder(folder_path):
     has_csv = any(f.endswith(".csv") for f in os.listdir(folder_path))
     has_video = any(f.endswith(".mp4") for f in os.listdir(folder_path))
-    return has_csv and has_video
+    return has_video
 
 
 # 執行分析流程：對資料夾中的每一球影片進行四點特徵擷取
