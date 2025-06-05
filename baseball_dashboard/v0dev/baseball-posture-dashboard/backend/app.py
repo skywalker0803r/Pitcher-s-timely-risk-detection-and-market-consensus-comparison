@@ -8,6 +8,7 @@ import mediapipe as mp
 import base64
 import time
 import numpy as np
+from predict import predict_function
 
 def get_landmark_vector(lm, idx):
     return np.array([lm[idx].x, lm[idx].y, lm[idx].z])  # ✅ 改為 NumPy 陣列
@@ -134,28 +135,19 @@ def process_and_stream(video_path, sid):
                 'hip_rotation': hip_rotations[-1],
                 'elbow_height': elbow_heights[-1],
             }, room=sid)
-            #time.sleep(delay)
-
-        # 影片撥放完後計算每個frame加速度
-        velocities = [
-            np.linalg.norm(
-                get_landmark_vector(frame_landmarks[i], 16)
-                - get_landmark_vector(frame_landmarks[i - 1], 16)
-            )
-            for i in range(1, len(frame_landmarks))
-            if frame_landmarks[i] is not None and frame_landmarks[i-1] is not None
-        ]
-        if velocities:
-            release_idx = int(np.argmax(velodcities)) + 1
-            if release_idx < len(stride_angles):
-                socketio.emit('frame', {
-                    'image': frame_b64,
-                    'stride_angle': stride_angles[release_idx],
-                    'throwing_angle': throwing_angles[release_idx],
-                    'arm_symmetry': arm_symmetrys[release_idx],
-                    'hip_rotation': hip_rotations[release_idx],
-                    'elbow_height': elbow_heights[release_idx],
-                }, room=sid)
+        # 影片結束
+        # 預測
+        predict = predict_function(frame_landmarks,'model/model.pth')
+        # 打印預測結果
+        socketio.emit('frame', {
+            'image': frame_b64,
+            'stride_angle': stride_angles[-1],
+            'throwing_angle': throwing_angles[-1],
+            'arm_symmetry': arm_symmetrys[-1],
+            'hip_rotation': hip_rotations[-1],
+            'elbow_height': elbow_heights[-1],
+            'predict':predict,
+        }, room=sid)
     cap.release()
     socketio.emit('done', {}, room=sid)
 

@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 
 export default function Component() {
+  const [predict, setPredict] = useState<string | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const socketRef = useRef<any>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
@@ -92,6 +93,7 @@ export default function Component() {
               : '',
           },
         }))
+        if (payload.predict) setPredict(payload.predict)
         })
         socketRef.current.on("done", () => {
           // 串流結束
@@ -284,12 +286,11 @@ export default function Component() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">改善率</CardTitle>
+                  <CardTitle className="text-sm font-medium">好壞球預測</CardTitle>
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">+12%</div>
-                  <p className="text-xs text-muted-foreground">較上月提升</p>
+                  <div className="text-2xl font-bold">{predict === null ? "預測中" : predict}</div>
                 </CardContent>
               </Card>
 
@@ -316,16 +317,18 @@ export default function Component() {
                     <div className="flex justify-between text-sm">
                       <span>
                         {key === "stride_angle"
-                          ? "跨步角度"
-                          : key === "balance"
-                            ? "平衡"
-                            : key === "armPosition"
-                              ? "手臂位置"
-                              : key === "footwork"
-                                ? "腳步"
-                                : "時機掌握"}
+                              ? "跨步角度"
+                              : key === "throwing_angle"
+                                ? "投擲角度"
+                                : key === "arm_symmetry"
+                                  ? "雙手對稱性"
+                                  : key === "hip_rotation"
+                                    ? "髖部旋轉角度"
+                                    : key === "elbow_height"
+                                      ? "右手手肘的高度"
+                                      : ""}
                       </span>
-                      <span className="font-medium">{data.score}%</span>
+                      <span className="font-medium">{data.score}</span>
                     </div>
                     <Progress value={data.score} className="h-2" />
                   </div>
