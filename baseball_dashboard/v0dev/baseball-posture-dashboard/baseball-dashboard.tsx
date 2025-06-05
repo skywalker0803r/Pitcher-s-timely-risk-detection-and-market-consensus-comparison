@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+import io from "socket.io-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,15 +23,85 @@ import {
 } from "lucide-react"
 
 export default function Component() {
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const socketRef = useRef<any>(null)
+  const [videoUrl, setVideoUrl] = useState<string | null>(null)
+  const [streamUrl, setStreamUrl] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [currentScore, setCurrentScore] = useState(85)
   const [analysisData, setAnalysisData] = useState({
-    stance: { score: 88, status: "良好" },
-    balance: { score: 82, status: "需改善" },
-    armPosition: { score: 91, status: "優秀" },
-    footwork: { score: 79, status: "需改善" },
-    timing: { score: 86, status: "良好" },
+    stride_angle: { score: '', status: '' },
+    throwing_angle: { score: '', status: '' },
+    arm_symmetry: { score: '', status: '' },
+    hip_rotation: { score: '', status: '' },
+    elbow_height: { score: '', status: '' },
   })
+
+  // 處理影片上傳
+  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    const formData = new FormData()
+    formData.append("video", file)
+    const res = await fetch("http://localhost:5000/api/upload", {
+      method: "POST",
+      body: formData,
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setSessionId(data.session_id)
+      setVideoUrl(URL.createObjectURL(file))
+      // 建立 socket 連線
+      if (!socketRef.current) {
+        socketRef.current = io("http://localhost:5000")
+        socketRef.current.on("frame", (payload: any) => {
+          setStreamUrl("data:image/jpeg;base64," + payload.image)
+          setAnalysisData((prev) => ({
+          ...prev,
+          stride_angle: {
+            ...prev.stride_angle,
+            score: payload.stride_angle !== undefined && payload.stride_angle !== null
+              ? Number(payload.stride_angle.toFixed(2))
+              : '',
+          },
+          throwing_angle: {
+            ...prev.throwing_angle,
+            score: payload.throwing_angle !== undefined && payload.throwing_angle !== null
+              ? Number(payload.throwing_angle.toFixed(2))
+              : '',
+          },
+          arm_symmetry: {
+            ...prev.arm_symmetry,
+            score: payload.arm_symmetry !== undefined && payload.arm_symmetry !== null
+              ? Number(payload.arm_symmetry.toFixed(2))
+              : '',
+          },
+          hip_rotation: {
+            ...prev.hip_rotation,
+            score: payload.hip_rotation !== undefined && payload.hip_rotation !== null
+              ? Number(payload.hip_rotation.toFixed(2))
+              : '',
+          },
+          elbow_height: {
+            ...prev.elbow_height,
+            score: payload.elbow_height !== undefined && payload.elbow_height !== null
+              ? Number(payload.elbow_height.toFixed(2))
+              : '',
+          },
+        }))
+        })
+        socketRef.current.on("done", () => {
+          // 串流結束
+        })
+      }
+      // 通知後端開始串流
+      socketRef.current.emit("start_stream", { session_id: data.session_id })
+    }
+    setUploading(false)
+  }
 
   const [recentAnalyses] = useState([
     { date: "2024-01-15", score: 85, type: "打擊姿勢" },
@@ -94,31 +165,49 @@ export default function Component() {
               {/* Camera Feed Placeholder */}
               <div className="relative">
                 <div className="aspect-video bg-gray-900 rounded-lg flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm opacity-75">攝影機畫面</p>
-                    {isAnalyzing && (
-                      <div className="absolute top-4 right-4">
-                        <div className="flex items-center gap-2 bg-red-600 px-3 py-1 rounded-full">
-                          <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                          <span className="text-xs">錄製中</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  {!videoUrl && (
+                    <div className="text-center text-white">
+                      <Camera className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm opacity-75">請上傳影片進行分析</p>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        ref={fileInputRef}
+                        onChange={handleVideoUpload}
+                      />
+                      <Button
+                        className="mt-2"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={uploading}
+                      >
+                        {uploading ? "上傳中..." : "選擇影片"}
+                      </Button>
+                    </div>
+                  )}
+                  {videoUrl && !streamUrl && (
+                    <video src={videoUrl} controls className="w-full h-full rounded-lg" />
+                  )}
+                  {streamUrl && (
+                    // 假設串流為 MJPEG，直接用 <img> 顯示
+                    <img src={streamUrl} alt="分析串流" className="w-full h-full rounded-lg object-contain" />
+                  )}
                 </div>
                 <div className="flex justify-center gap-2 mt-4">
-                  <Button onClick={toggleAnalysis} className="flex items-center gap-2">
-                    {isAnalyzing ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                    {isAnalyzing ? "暫停分析" : "開始分析"}
-                  </Button>
-                  <Button variant="outline" className="flex items-center gap-2">
+                  <Button
+                    onClick={() => {
+                      setVideoUrl(null)
+                      setStreamUrl(null)
+                      if (fileInputRef.current) fileInputRef.current.value = ""
+                    }}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
                     <RotateCcw className="w-4 h-4" />
                     重置
                   </Button>
                 </div>
               </div>
-
               {/* Current Analysis */}
               <div className="space-y-4">
                 <div className="text-center">
@@ -136,15 +225,17 @@ export default function Component() {
                           }`}
                         ></div>
                         <span className="font-medium">
-                          {key === "stance"
-                            ? "站姿"
-                            : key === "balance"
-                              ? "平衡"
-                              : key === "armPosition"
-                                ? "手臂位置"
-                                : key === "footwork"
-                                  ? "腳步"
-                                  : "時機掌握"}
+                          {key === "stride_angle"
+                              ? "跨步角度"
+                              : key === "throwing_angle"
+                                ? "投擲角度"
+                                : key === "arm_symmetry"
+                                  ? "雙手對稱性"
+                                  : key === "hip_rotation"
+                                    ? "髖部旋轉角度"
+                                    : key === "elbow_height"
+                                      ? "右手手肘的高度"
+                                      : ""}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -224,8 +315,8 @@ export default function Component() {
                   <div key={key} className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span>
-                        {key === "stance"
-                          ? "站姿"
+                        {key === "stride_angle"
+                          ? "跨步角度"
                           : key === "balance"
                             ? "平衡"
                             : key === "armPosition"
