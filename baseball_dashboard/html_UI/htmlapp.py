@@ -125,45 +125,26 @@ def gen_frames():
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = pose.process(rgb)
             if results.pose_landmarks:
-                mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-            ret2, buffer = cv2.imencode('.jpg', frame)
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-        cap.release()
-
-@socketio.on('disconnect')
-def test_disconnect():
-    print('Client disconnected')
-
-def process_video():
-    global video_path, processing, selected_joint_idx
-    cap = cv2.VideoCapture(video_path) if video_path else None
-    if not cap or not cap.isOpened():
-        return
-    with mp_pose.Pose(static_image_mode=False, model_complexity=0, smooth_landmarks=True,
-                      enable_segmentation=False, min_detection_confidence=0.5,
-                      min_tracking_confidence=0.5) as pose:
-        while processing and cap.isOpened():
-            ret, frame = cap.read()
-            if not ret:
-                break
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            results = pose.process(rgb)
-            if results.pose_landmarks:
                 landmarks = results.pose_landmarks.landmark
                 j = landmarks[selected_joint_idx]
                 data = {'x': j.x, 'y': j.y, 'z': j.z}
                 eval_result = evaluate_throw_pose(landmarks)
                 comparison_result = Standard_action_comparison(landmarks)
-            else:
-                data = {'x': None, 'y': None, 'z': None}
-                eval_result = {"error": '沒有偵測到關節'}
-                comparison_result = {"error": '沒有偵測到關節'}
+                mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
+            ret2, buffer = cv2.imencode('.jpg', frame)
+            frame_bytes = buffer.tobytes()
             socketio.emit('joint_data', data)
             socketio.emit('pose_feedback', eval_result)
             socketio.emit('standard_action_comparison', comparison_result)
+            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
         cap.release()
-        socketio.emit('video_finished')
+
+def process_video():
+    return 0
+
+@socketio.on('disconnect')
+def test_disconnect():
+    print('Client disconnected')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True)
